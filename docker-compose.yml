@@ -29,6 +29,7 @@ services:
   celery_worker:
     build: .
     env_file: .env
+    working_dir: /app
     depends_on:
       - redis
       - db
