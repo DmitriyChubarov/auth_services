@@ -5,6 +5,7 @@ __pycache__/
 *.pyd
 *.swp
 *.swo
+.DS_Store
 
 # Django
 *.log
