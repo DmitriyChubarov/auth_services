@@ -14,3 +14,12 @@ class UserRegistrationService:
                 return user
         except IntegrityError as exc:
             raise exc
+
+    @staticmethod
+    def get_users() -> User:
+        try:
+            with transaction.atomic():
+                user = User.objects.all()
+                return user
+        except Exception as exc:
+            raise exc

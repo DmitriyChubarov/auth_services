@@ -17,20 +17,16 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ["username", "password", "password2", "phone_number"]
         extra_kwargs = {
             "password": {"write_only": True},
-            "username": {
-                "validators": [UniqueValidator(queryset=User.objects.all())]
-            },
-            "phone_number": {
-                "validators": [UniqueValidator(queryset=User.objects.all())]
-            },
+            "username": {"validators": [UniqueValidator(queryset=UserRegistrationService.get_users(), message="Пользователь с таким именем уже существует.")]},
+            "phone_number": {"validators": [UniqueValidator(queryset=UserRegistrationService.get_users(), message="Пользователь с таким номером уже существует.")]},
         }
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
         password = attrs.get("password")
         password2 = attrs.get("password2")
+        username = attrs.get("username")
         if password != password2:
             raise serializers.ValidationError({"detail": "Пароли не совпадают."})
-
         validate_password(password)
         return attrs
 
@@ -40,5 +36,5 @@ class RegisterSerializer(serializers.ModelSerializer):
         try:
             user = UserRegistrationService.register_user({"password": password, **validated_data})
             return user
-        except IntegrityError:
-            raise serializers.ValidationError({"detail": "Пользователь с такими данными уже существует."})
+        except Exception as exc:
+            raise exc

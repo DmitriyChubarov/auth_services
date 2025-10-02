@@ -12,3 +12,5 @@ __pycache__/
 *.pot
 *.py[cod]
 .env
+
+.coverage
