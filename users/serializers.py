@@ -6,7 +6,9 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from .models import User
-from .services import UserRegistrationService
+from .services import UserRegistrationService, UserLoginService
+from .utils import OTPManager
+from .tasks import send_sms_task
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -38,3 +40,36 @@ class RegisterSerializer(serializers.ModelSerializer):
             return user
         except Exception as exc:
             raise exc
+
+
+class LoginSerializer(serializers.Serializer):
+    username_or_phone = serializers.CharField()
+    password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, any]:
+        username_or_phone = attrs.get("username_or_phone")
+        password = attrs.get("password")
+        try:
+            user = UserLoginService.get_user_by_phone_or_name(username_or_phone)
+        except Exception:
+            raise serializers.ValidationError({"detail": "Ошибка при поиске пользователя."})
+
+        if not user:
+            raise serializers.ValidationError({"detail": "Пользователь не существует, пройдите регистрацию."})
+
+        if password != user.password:
+            raise serializers.ValidationError({"detail": "Введён неправильный пароль."})
+        
+        otp_manager = OTPManager()
+        try:
+            otp_code = otp_manager.create_otp()
+            otp_manager.save_otp(username_or_phone, otp_code)
+        except Exception:
+            raise serializers.ValidationError({"detail": "Не удалось подготовить код подтверждения."})
+            
+        if user and getattr(user, "phone_number", None):
+            send_sms_task.delay(user.phone_number, otp_code)
+
+        return attrs
+        
+
