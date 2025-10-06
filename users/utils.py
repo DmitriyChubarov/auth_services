@@ -33,5 +33,4 @@ class OTPManager:
             raise OTPSendError(f'Новую СМС можно получить через {self.redis_client.ttl(f"sms_limit:{username}")} сек.')
         self.redis_client.set(username, otp, ex=self.otp_expire)
 
-    # Пример формата сообщения с TTL уже реализован выше
         

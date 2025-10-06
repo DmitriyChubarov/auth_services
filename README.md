@@ -3,7 +3,7 @@
 
 ### Технологии
 
-- Python 3 / Odoo 18
+- Python3, Django, DRF
 - PostgreSQL 
 - Docker, Docker Compose
 - Celery, Redis
@@ -25,9 +25,6 @@ cd auth_services
 docker compose up
 ```
 Сервисом можно пользоваться, удачи!
-```bash
-http://localhost:8069
-```
   
 ### Контакты
 - tg: @eeezz_z
