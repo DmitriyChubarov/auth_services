@@ -5,7 +5,7 @@ import os
 
 class SMSSender:
     def __init__(self) -> None:
-        self.api_key = os.getenv('SMS_API_KEY'),
+        self.api_key = os.getenv('SMS_API_KEY')
         self.api_url = 'https://sms.ru/sms/send'
         self.sender = os.getenv('SMS_SENDER')
     
