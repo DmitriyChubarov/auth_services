@@ -20,11 +20,35 @@ cd /ваш/путь
 git clone https://github.com/DmitriyChubarov/auth_services.git
 cd auth_services
 ```
+Создаём .env файл
+```bash
+DEBUG=1
+SECRET_KEY=your_secret_key_here
+
+DB_NAME=auth_db
+DB_USER=user
+DB_PASSWORD=password
+DB_HOST=db
+DB_PORT=5432
+
+REDIS_HOST=redis
+REDIS_PORT=6379
+
+SMS_API_KEY=your_sms_api_key_here
+SMS_SENDER=auth_service
+```
+
 Запускаем Docker на устройстве, после чего запускаем сервис:
 ```bash
-docker compose up
+docker compose up --build
 ```
 Сервисом можно пользоваться, удачи!
+```bash
+http://localhost:8000/api/register/
+```
+
+
+
   
 ### Контакты
 - tg: @eeezz_z
