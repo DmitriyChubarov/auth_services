@@ -2,12 +2,14 @@ from typing import Any, Dict
 
 from django.contrib.auth.password_validation import validate_password
 from django.db import IntegrityError
+from django.contrib.auth.hashers import check_password
+
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from .models import User
 from .services import UserRegistrationService, UserLoginService
-from .utils import OTPManager
+from .utils import OTPManager, OTPSendError
 from .tasks import send_sms_task
 
 
@@ -57,13 +59,15 @@ class LoginSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError({"detail": "Пользователь не существует, пройдите регистрацию."})
 
-        if password != user.password:
+        if not check_password(password, user.password):
             raise serializers.ValidationError({"detail": "Введён неправильный пароль."})
         
         otp_manager = OTPManager()
         try:
             otp_code = otp_manager.create_otp()
             otp_manager.save_otp(username_or_phone, otp_code)
+        except OTPSendError as e:
+            raise serializers.ValidationError({"detail": str(e)})
         except Exception:
             raise serializers.ValidationError({"detail": "Не удалось подготовить код подтверждения."})
             
