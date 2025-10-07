@@ -27,4 +27,4 @@ class SMSSender:
 @shared_task
 def send_sms_task(phone_number, otp_code) -> Dict[str, Any]:
     sender = SMSSender()
-    return  sender.send_sms(phone_number, otp_code)
+    return sender.send_sms(phone_number, otp_code)

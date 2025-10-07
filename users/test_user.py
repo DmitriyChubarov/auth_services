@@ -1,6 +1,9 @@
 from django.test import TestCase
+
 from rest_framework.test import APITestCase
 from rest_framework.response import Response
+
+from unittest.mock import patch, MagicMock
 
 from .models import User
 
@@ -71,6 +74,13 @@ class TestUserLogin(APITestCase):
     def test_user_login(self) -> None:
         response = self.base_user_login('test_user_login', 'test_password_login')
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['detail'], "Код отправлен на телефон")
+    
+    def test_user_login_repeat(self) -> None:
+        response_first = self.base_user_login('test_user_login', 'test_password_login')
+        response_second = self.base_user_login('test_user_login', 'test_password_login')
+        self.assertEqual(response_second.status_code, 400)
+        self.assertIn("Новую СМС можно получить", response_second.data['detail'][0])
 
     def test_user_login_invalid_name(self) -> None:
         response = self.base_user_login('none', 'test_password_login')
@@ -82,7 +92,20 @@ class TestUserLogin(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['detail'][0], "Введён неправильный пароль.")
 
-    # @patch('users.serializers.send_sms_task.delay')
-    # @patch('users.serializers.OTPManager')
-    # def test_user_none_name(self, mock_otp_manager_class, mock_send_sms):
+    @patch('users.serializers.send_sms_task.delay')
+    @patch('users.serializers.OTPManager')
+    def test_user_login_success(self, mock_otp_manager_class, mock_send_sms):
+        mock_otp_manager = MagicMock()
+        mock_otp_manager.create_otp.return_value = "123456"
+        mock_otp_manager_class.return_value = mock_otp_manager
+        
+        response = self.base_user_login('test_user_login', 'test_password_login')
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['detail'], 'Код отправлен на телефон')
+        
+        mock_otp_manager.create_otp.assert_called_once()
+        mock_otp_manager.save_otp.assert_called_once_with('test_user_login', '123456')
+        
+        mock_send_sms.assert_called_once_with('1234567890', '123456')
          

@@ -5,7 +5,6 @@ import os
 class OTPSendError(Exception):
     pass
 
-
 class OTPManager:
     def __init__(self):
         self.redis_client = redis.Redis(
@@ -13,7 +12,7 @@ class OTPManager:
             port = int(os.getenv('REDIS_PORT'))
         )
         self.otp_expire = 120
-        self.sms_interval = 10
+        self.sms_interval = 60
         self.sms_limit = 1
 
     def create_otp(self) -> str:
