@@ -1,5 +1,7 @@
 from typing import Any, Dict
 
+import re
+
 from django.contrib.auth.password_validation import validate_password
 from django.db import IntegrityError
 from django.contrib.auth.hashers import check_password
@@ -29,8 +31,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         password = attrs.get("password")
         password2 = attrs.get("password2")
         username = attrs.get("username")
+        phone_number = attrs.get("phone_number")
         if password != password2:
             raise serializers.ValidationError({"detail": "Пароли не совпадают."})
+
+        if not re.match(r'^8\d{10}$', phone_number):
+            raise serializers.ValidationError({"detail": "Введен некорректный номер телефона. Формат: 8XXXXXXXXXX"})
         validate_password(password)
         return attrs
 

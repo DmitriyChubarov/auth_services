@@ -13,7 +13,7 @@ class TestUserRegistration(APITestCase):
         self.user = User.objects.create_user(
             username='test_user_register',
             password='test_password_register',
-            phone_number='1234567890',
+            phone_number='88888888888',
         )
 
     def base_user_registration(self, test_user_register, test_password_register, test_password_register_2, phone_number) -> Response:
@@ -26,31 +26,36 @@ class TestUserRegistration(APITestCase):
         return response
 
     def test_user_registration(self) -> None:
-        response = self.base_user_registration('test_user_register-1', 'test_password_register-1', 'test_password_register-1', '1234567891')
+        response = self.base_user_registration('test_user_register-1', 'test_password_register-1', 'test_password_register-1', '87777777777')
         self.assertEqual(response.status_code, 201)
 
     def test_user_registration_with_existing_user(self) -> None:
-        response = self.base_user_registration('test_user_register', 'test_password_register-1', 'test_password_register-1', '1234567891')
+        response = self.base_user_registration('test_user_register', 'test_password_register-1', 'test_password_register-1', '87777777777')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['username'][0], 'Пользователь с таким именем уже существует.')
 
     def test_user_registration_with_existing_phone_number(self) -> None:
-        response = self.base_user_registration('test_user_register-1', 'test_password_register-1', 'test_password_register-1', '1234567890')
+        response = self.base_user_registration('test_user_register-1', 'test_password_register-1', 'test_password_register-1', '88888888888')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['phone_number'][0], 'Пользователь с таким номером уже существует.')
 
     def test_user_registration_with_different_passwords(self) -> None:
-        response = self.base_user_registration('test_user_register-1', 'test_password_register-1', 'test_password_register-2', '1234567891')
+        response = self.base_user_registration('test_user_register-1', 'test_password_register-1', 'test_password_register-2', '87777777777')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['detail'][0], 'Пароли не совпадают.')
+
+    def test_user_registration_with_invalid_phone_number(self) -> None:
+        response = self.base_user_registration('test_user_register-1', 't-1', 't-1', '77777777777')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['detail'][0], 'Введен некорректный номер телефона. Формат: 8XXXXXXXXXX')
     
     def test_user_registration_with_short_password(self) -> None:
-        response = self.base_user_registration('test_user_register-1', 't-1', 't-1', '1234567891')
+        response = self.base_user_registration('test_user_register-1', 't-1', 't-1', '87777777777')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['non_field_errors'][0], 'This password is too short. It must contain at least 8 characters.')
         
     def test_user_registration_with_weak_password(self) -> None:
-        response = self.base_user_registration('test_user_register-1', '12345678', '12345678', '1234567891')
+        response = self.base_user_registration('test_user_register-1', '12345678', '12345678', '87777777777')
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['non_field_errors'][0], 'This password is too common.')
         self.assertEqual(response.data['non_field_errors'][1], 'This password is entirely numeric.')
@@ -61,7 +66,7 @@ class TestUserLogin(APITestCase):
         self.user = User.objects.create_user(
             username='test_user_login',
             password='test_password_login',
-            phone_number='1234567890',
+            phone_number='88888888888',
         )
 
     def base_user_login(self, test_user_login, test_password_login) -> None:
@@ -107,5 +112,5 @@ class TestUserLogin(APITestCase):
         mock_otp_manager.create_otp.assert_called_once()
         mock_otp_manager.save_otp.assert_called_once_with('test_user_login', '123456')
         
-        mock_send_sms.assert_called_once_with('1234567890', '123456')
+        mock_send_sms.assert_called_once_with('88888888888', '123456')
          
