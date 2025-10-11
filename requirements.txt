@@ -6,4 +6,5 @@ celery
 redis
 python-dotenv
 requests
+PyJWT
 

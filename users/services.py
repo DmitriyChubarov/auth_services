@@ -7,7 +7,7 @@ from django.db.models import Q
 from .models import User
 
 
-class UserRegistrationService:
+class UserService:
     @staticmethod
     def register_user(validated_data: Dict[str, Any]) -> User:
         try:
@@ -26,7 +26,6 @@ class UserRegistrationService:
         except Exception as exc:
             raise exc
 
-class UserLoginService:
     @staticmethod
     def get_user_by_phone_or_name(username_or_phone: str) -> Optional[User]:
         try:

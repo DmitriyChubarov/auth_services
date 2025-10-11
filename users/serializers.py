@@ -10,7 +10,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from .models import User
-from .services import UserRegistrationService, UserLoginService
+from .services import UserService
 from .utils import OTPManager, OTPSendError
 from .tasks import send_sms_task
 
@@ -23,8 +23,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ["username", "password", "password2", "phone_number"]
         extra_kwargs = {
             "password": {"write_only": True},
-            "username": {"validators": [UniqueValidator(queryset=UserRegistrationService.get_users(), message="Пользователь с таким именем уже существует.")]},
-            "phone_number": {"validators": [UniqueValidator(queryset=UserRegistrationService.get_users(), message="Пользователь с таким номером уже существует.")]},
+            "username": {"validators": [UniqueValidator(queryset=UserService.get_users(), message="Пользователь с таким именем уже существует.")]},
+            "phone_number": {"validators": [UniqueValidator(queryset=UserService.get_users(), message="Пользователь с таким номером уже существует.")]},
         }
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
@@ -44,7 +44,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data.pop("password2", None)
         password: str = validated_data.pop("password")
         try:
-            user = UserRegistrationService.register_user({"password": password, **validated_data})
+            user = UserService.register_user({"password": password, **validated_data})
             return user
         except Exception as exc:
             raise exc
@@ -54,11 +54,11 @@ class LoginSerializer(serializers.Serializer):
     username_or_phone = serializers.CharField()
     password = serializers.CharField(write_only=True)
 
-    def validate(self, attrs: Dict[str, Any]) -> Dict[str, any]:
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
         username_or_phone = attrs.get("username_or_phone")
         password = attrs.get("password")
         try:
-            user = UserLoginService.get_user_by_phone_or_name(username_or_phone)
+            user = UserService.get_user_by_phone_or_name(username_or_phone)
         except Exception:
             raise serializers.ValidationError({"detail": "Ошибка при поиске пользователя."})
 
@@ -81,5 +81,27 @@ class LoginSerializer(serializers.Serializer):
             send_sms_task.delay(user.phone_number, otp_code)
 
         return attrs
-        
+
+class SMSSerializer(serializers.Serializer):
+    username_or_phone = serializers.CharField()
+    sms_code = serializers.CharField(write_only=True)
+
+    def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
+        username_or_phone = attrs.get("username_or_phone")
+        sms_code = attrs.get("sms_code")
+
+        otp_manager = OTPManager()
+        try:
+            otp_code = otp_manager.get_otp(username_or_phone)
+        except OTPSendError as e:
+            raise serializers.ValidationError({'detail': str(e)})
+        except Exception:
+            raise serializers.ValidationError({'detail': 'Ошибка проверки смс кода.'})
+
+        try:
+            user = UserService.get_user_by_phone_or_name(username_or_phone)
+        except Exception:
+            serializers.ValidationError({'detail', 'Пользователь не найден.'})
+        attrs['user'] = user
+        return attrs     
 
