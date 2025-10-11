@@ -25,6 +25,8 @@ cd auth_services
 DEBUG=1
 SECRET_KEY=your_secret_key_here
 
+SECRET_KEY_JWT=your_secret_key_jwt
+
 DB_NAME=auth_db
 DB_USER=user
 DB_PASSWORD=password
