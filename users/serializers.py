@@ -1,5 +1,4 @@
-from typing import Any, Dict
-
+from typing import Any, Dict, Optional
 import re
 
 from django.contrib.auth.password_validation import validate_password
@@ -28,10 +27,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
-        password = attrs.get("password")
-        password2 = attrs.get("password2")
-        username = attrs.get("username")
-        phone_number = attrs.get("phone_number")
+        password: str = attrs.get("password")
+        password2: str = attrs.get("password2")
+        username: str = attrs.get("username")
+        phone_number: str = attrs.get("phone_number")
         if password != password2:
             raise serializers.ValidationError({"detail": "Пароли не совпадают."})
 
@@ -44,10 +43,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data.pop("password2", None)
         password: str = validated_data.pop("password")
         try:
-            user = UserService.register_user({"password": password, **validated_data})
+            user: User = UserService.register_user({"password": password, **validated_data})
             return user
-        except Exception as exc:
-            raise exc
+        except Exception as e:
+            raise serializers.ValidationError({'detail': str(e)})
 
 
 class LoginSerializer(serializers.Serializer):
@@ -55,10 +54,10 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
-        username_or_phone = attrs.get("username_or_phone")
-        password = attrs.get("password")
+        username_or_phone : str = attrs.get("username_or_phone")
+        password: str = attrs.get("password")
         try:
-            user = UserService.get_user_by_phone_or_name(username_or_phone)
+            user: Optional[User] = UserService.get_user_by_phone_or_name(username_or_phone)
         except Exception:
             raise serializers.ValidationError({"detail": "Ошибка при поиске пользователя."})
 
@@ -70,7 +69,7 @@ class LoginSerializer(serializers.Serializer):
         
         otp_manager = OTPManager()
         try:
-            otp_code = otp_manager.create_otp()
+            otp_code: str = otp_manager.create_otp()
             otp_manager.save_otp(username_or_phone, otp_code)
         except OTPSendError as e:
             raise serializers.ValidationError({"detail": str(e)})
@@ -87,21 +86,24 @@ class SMSSerializer(serializers.Serializer):
     sms_code = serializers.CharField(write_only=True)
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
-        username_or_phone = attrs.get("username_or_phone")
-        sms_code = attrs.get("sms_code")
+        username_or_phone: str = attrs.get("username_or_phone")
+        sms_code: str = attrs.get("sms_code")
 
         otp_manager = OTPManager()
         try:
             otp_code = otp_manager.get_otp(username_or_phone)
         except OTPSendError as e:
             raise serializers.ValidationError({'detail': str(e)})
-        except Exception:
-            raise serializers.ValidationError({'detail': 'Ошибка проверки смс кода.'})
+        
+        if otp_code.decode() != sms_code:
+            raise serializers.ValidationError({'detail': 'Введён неверный код.'})
 
-        try:
-            user = UserService.get_user_by_phone_or_name(username_or_phone)
-        except Exception:
-            serializers.ValidationError({'detail', 'Пользователь не найден.'})
+        user: Optional[User] = UserService.get_user_by_phone_or_name(username_or_phone)
+        if not user:
+            raise serializers.ValidationError({'detail': 'Не удалось найти данные пользователя. Попробуйте войти заново.'})
+
+        otp_manager.delete_otp(username_or_phone)
+
         attrs['user'] = user
         return attrs     
 
