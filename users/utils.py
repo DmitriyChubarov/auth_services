@@ -9,7 +9,7 @@ class OTPManager:
     def __init__(self) -> None:
         self.redis_client = redis.Redis(
             host = os.getenv('REDIS_HOST'),
-            port = int(os.getenv('REDIS_PORT'))
+            port = int(os.getenv('REDIS_PORT')),
             decode_responses=True
         )
         self.otp_expire = 6000
@@ -30,7 +30,7 @@ class OTPManager:
         
     def save_otp(self, username, otp) -> None:
         if not self.can_send_sms(username):
-            raise OTPSendError(f'Новую СМС можно получить через {self.redis_client.ttl(f"sms_limit:{username}")} сек.')
+            raise OTPSendError(f'Новый код можно получить через {self.redis_client.ttl(f"sms_limit:{username}")} сек.')
         self.redis_client.set(username, otp, ex=self.otp_expire)
 
     def get_otp(self, username) -> str:

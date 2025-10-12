@@ -95,7 +95,7 @@ class SMSSerializer(serializers.Serializer):
         except OTPSendError as e:
             raise serializers.ValidationError({'detail': str(e)})
         
-        if otp_code.decode() != sms_code:
+        if otp_code != sms_code:
             raise serializers.ValidationError({'detail': 'Введён неверный код.'})
 
         user: Optional[User] = UserService.get_user_by_phone_or_name(username_or_phone)
