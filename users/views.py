@@ -24,7 +24,7 @@ class LoginView(GenericAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        return Response({"detail": "Код отправлен на телефон"}, status=status.HTTP_200_OK)
+        return Response({"detail": "Отправка кода на телефон запущена."}, status=status.HTTP_200_OK)
 
 class SMSView(GenericAPIView):
     serializer_class = SMSSerializer

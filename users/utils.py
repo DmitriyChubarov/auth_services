@@ -12,7 +12,7 @@ class OTPManager:
             port = int(os.getenv('REDIS_PORT')),
             decode_responses=True
         )
-        self.otp_expire = 6000
+        self.otp_expire = 120
         self.sms_interval = 60
         self.sms_limit = 1
 
